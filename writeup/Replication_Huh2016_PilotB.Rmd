@@ -1,5 +1,5 @@
 ---
-title: "Replication_Huh2016_PilotA"
+title: "Replication_Huh2016_PilotB"
 author: "Danielle Boles"
 date: "11/12/2017"
 output: html_document
@@ -70,8 +70,8 @@ Where this replication differs in analysis reporting (i.e., z scores, Wald chi s
 
 #### Importing the Data
 ```{r}
-setwd("~/Desktop/PSYCH 251 - Stats/Huh2016")
-d <- read.csv("Replication_Huh2016_PilotA.csv")
+setwd("~/Desktop/PSYCH 251 - Stats/Huh2016/writeup")
+d <- read.csv("Replication_Huh2016_PilotB.csv")
 
 ```
 
@@ -92,17 +92,18 @@ d$sub8 <- as.factor(d$sub8)
 d$sub9 <- as.factor(d$sub9)
 d$sub10 <- as.factor(d$sub10)
 
+# not all codes below apply. With only pilot data for N=5, not all "sub" vars have 2 levels, i.e. for sub1, all 5 participants chose the cross category item
 
-d$sub1 <- factor(d$sub1, labels = c("cross category", "within category"))
-d$sub2 <- factor(d$sub2, labels = c("cross category", "within category"))
-d$sub3 <- factor(d$sub3, labels = c("cross category", "within category"))
-d$sub4 <- factor(d$sub4, labels = c("cross category", "within category"))
-d$sub5 <- factor(d$sub5, labels = c("cross category", "within category"))
-d$sub6 <- factor(d$sub6, labels = c("cross category", "within category"))
-d$sub7 <- factor(d$sub7, labels = c("cross category", "within category"))
-d$sub8 <- factor(d$sub8, labels = c("cross category", "within category"))
-d$sub9 <- factor(d$sub9, labels = c("cross category", "within category"))
-d$sub10 <- factor(d$sub10, labels = c("cross category", "within category"))
+#d$sub1 <- factor(d$sub1, labels = c("cross category", "within category"))
+#d$sub2 <- factor(d$sub2, labels = c("cross category", "within category"))
+#d$sub3 <- factor(d$sub3, labels = c("cross category", "within category"))
+#d$sub4 <- factor(d$sub4, labels = c("cross category", "within category"))
+#d$sub5 <- factor(d$sub5, labels = c("cross category", "within category"))
+#d$sub6 <- factor(d$sub6, labels = c("cross category", "within category"))
+#d$sub7 <- factor(d$sub7, labels = c("cross category", "within category"))
+#d$sub8 <- factor(d$sub8, labels = c("cross category", "within category"))
+#d$sub9 <- factor(d$sub9, labels = c("cross category", "within category"))
+#d$sub10 <- factor(d$sub10, labels = c("cross category", "within category"))
 
 id <- rownames(d)
 d <- cbind(id=id, d)
@@ -124,17 +125,19 @@ d$sim9 <- as.numeric(d$sim9)
 d$sim10 <- as.numeric(d$sim10)
 
 
-# t tests for each set of stimuli in wide form
-t.test(d$sim1, mu=4)
-t.test(d$sim2, mu=4)
-t.test(d$sim3, mu=4)
+# t tests for each set of stimuli in wide form. Here I've blocked off all codes that did not work and had the following message: "Error: Error in t.test.default(d$sim[], mu = 4) : data are essentially constant""
+
+
+#t.test(d$sim1, mu=4)
+#t.test(d$sim2, mu=4)
+#t.test(d$sim3, mu=4)
 t.test(d$sim4, mu=4)
-t.test(d$sim5, mu=4)
+#t.test(d$sim5, mu=4)
 t.test(d$sim6, mu=4)
 t.test(d$sim7, mu=4)
 t.test(d$sim8, mu=4)
 t.test(d$sim9, mu=4)
-t.test(d$sim10, mu=4)
+#t.test(d$sim10, mu=4)
 
 # convert to tidy data to calculate overall mean & sd
 d_tidy_sim <- d %>%
@@ -229,8 +232,6 @@ This replication diverges from the original paper by not reporting a z-score. Th
 #### Regression - to what extent is choice of substitutes determined by similarity & expected enjoyment?
 
 ```{r}
-
-
 d_tidy <- full_join(d_tidy_sim, d_tidy_choice, (by = NULL), copy = "FALSE")
 d_tidy <- full_join(d_tidy, d_tidy_pref, (by = NULL), copy = "FALSE")
 
