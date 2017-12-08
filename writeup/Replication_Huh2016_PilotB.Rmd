@@ -76,7 +76,7 @@ Where this replication differs in analysis reporting (i.e., z scores, Wald chi s
 
 #### Importing the Data
 ```{r}
-setwd("~/Desktop/PSYCH 251 - Stats/Huh2016/data")
+setwd("~/Desktop/PSYCH 251 - Stats/Huh2016/writeup")
 d <- read.csv("Replication_Huh2016_PilotA.csv")
 
 ```
@@ -167,7 +167,20 @@ Each of the 10 similarity ratings was tested against the scale midpoint (4; they
 #### Key Statistical Analysis 1: Expected Enjoyment (Preference) Ratings
 ```{r}
 
-# Calculating mean enjoyment, sd, and CI of substitute item type by stimulus set
+# Calculating mean enjoyment of substitute item type by stimulus set
+d_tidy_pref <- d %>%
+        select(id, starts_with("pref")) %>%
+        gather(pref, pref_rating, starts_with("pref")) %>%
+        separate(pref, c("set", "item"), "_") %>%
+        spread(item, pref_rating) %>%
+        rename(within = "1",
+               cross = "2",
+               target = "3")
+
+d_tidy_pref$set <- gsub("pref", "", d_tidy_pref$set)
+d_tidy_pref$set <- as.factor(d_tidy_pref$set)
+
+# Adding sd and ci to mean enjoyment of substitute item type by stimulus set
 d_tidy_pref_set <- d %>%
         select(id, starts_with("pref")) %>%
         gather(pref, pref_rating, starts_with("pref")) %>%
@@ -194,14 +207,14 @@ d_tidy_pref_set <- d %>%
 d_tidy_pref_set$set <- gsub("pref", "", d_tidy_pref_set$set)
 d_tidy_pref_set$set <- as.factor(d_tidy_pref_set$set)
 
-head(d_tidy_pref)
-kable(d_tidy_pref)
+head(d_tidy_pref_set)
+kable(d_tidy_pref_set)
 
 
 # Calculating t-tests by substitute item type overall
-t.test(d_tidy_pref$cross_mean, d_tidy_pref$within_mean, paired = TRUE)
-t.test(d_tidy_pref$target_mean, d_tidy_pref$within_mean, paired = TRUE)
-t.test(d_tidy_pref$cross_mean, d_tidy_pref$target_mean, paired = TRUE)
+t.test(d_tidy_pref_set$cross_mean, d_tidy_pref_set$within_mean, paired = TRUE)
+t.test(d_tidy_pref_set$target_mean, d_tidy_pref_set$within_mean, paired = TRUE)
+t.test(d_tidy_pref_set$cross_mean, d_tidy_pref_set$target_mean, paired = TRUE)
 
 
 # Creating table for overall mean enjoyment and sd of substitute item type
@@ -247,7 +260,7 @@ d_tidy_choice <- d %>%
 d_tidy_choice$set <- gsub("sub", "", d_tidy_choice$set)
 d_tidy_choice$choice <- gsub("cross category", "1", d_tidy_choice$choice)
 d_tidy_choice$choice <- gsub("within category", "2", d_tidy_choice$choice)
-
+d_tidy_choice$choice <- as.factor(d_tidy_choice$choice)
 head(d_tidy_choice)
 
 # calculate proportions chose within-category vs. cross-category & test against 50%
