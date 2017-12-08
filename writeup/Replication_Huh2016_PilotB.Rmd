@@ -168,7 +168,7 @@ Each of the 10 similarity ratings was tested against the scale midpoint (4; they
 ```{r}
 
 # Calculating mean enjoyment of substitute item type by stimulus set
-d_tidy_pref <- d %>%
+d_tidy_pref_subj <- d %>%
         select(id, starts_with("pref")) %>%
         gather(pref, pref_rating, starts_with("pref")) %>%
         separate(pref, c("set", "item"), "_") %>%
@@ -183,69 +183,34 @@ d_tidy_pref <- d %>%
 
 
 # Performing t-test on enjoyment ratings of substitute item type within subjects
-t.test(d_tidy_pref$mean_pref_cross, d_tidy_pref$mean_pref_within, paired=TRUE)
-t.test(d_tidy_pref$mean_pref_target, d_tidy_pref$mean_pref_within, paired=TRUE)
+t.test(d_tidy_pref_subj$mean_pref_cross, d_tidy_pref_subj$mean_pref_within, paired=TRUE)
+t.test(d_tidy_pref_subj$mean_pref_target, d_tidy_pref_subj$mean_pref_within, paired=TRUE)
 
 
-# Adding sd and ci to mean enjoyment of substitute item type by stimulus set
-d_tidy_pref_set <- d %>%
+# Adding ci to mean enjoyment of substitute item type
+
+d_tidy_pref_subj2 <- d %>%
         select(id, starts_with("pref")) %>%
         gather(pref, pref_rating, starts_with("pref")) %>%
         separate(pref, c("set", "item"), "_") %>%
-        spread(item, pref_rating) %>%
-        rename(within = "1",
-               cross = "2",
-               target = "3") %>%
-        select(set, within, cross, target) %>%
-        group_by(set) %>%
-        summarise(
-                within_mean = mean(within, na.rm = TRUE, round(2)),
-                within_sd = sd(within, na.rm = TRUE),
-                within_ci = ci(within),
-                cross_mean = mean(cross, na.rm = TRUE, round(2)),
-                cross_sd = sd(within, na.rm = TRUE),
-                cross_ci = ci(cross),
-                target_mean = mean(target, na.rm = TRUE, round(2)),
-                target_sd = sd(target, na.rm = TRUE),
-                target_ci = ci(target)) %>%
-        mutate(within_mean, within_sd, within_ci, cross_mean, cross_sd, within_ci, target_mean, target_sd, target_ci)
-
-# cleaning the data
-d_tidy_pref_set$set <- gsub("pref", "", d_tidy_pref_set$set)
-d_tidy_pref_set$set <- as.factor(d_tidy_pref_set$set)
-
-head(d_tidy_pref_set)
-kable(d_tidy_pref_set)
-
-
-# Performing t-test on substitute type within subjects
-d %>%
-        group_by(set, id) %>%
-        summarise(mean_pref_within = mean(within)) %>%
-        
-
-# Creating table for overall mean enjoyment and sd of substitute item type
-d_tidy_pref_overall <- d %>%
-        select(id, starts_with("pref")) %>%
-        gather(pref, pref_rating, starts_with("pref")) %>%
-        separate(pref, c("set", "item"), "_") %>%
+        group_by(id, item) %>%
+        summarise(mean_pref = mean(pref_rating)) %>%    # get subject means
         group_by(item) %>%
-        summarise(
-                mean = mean(pref_rating, na.rm = TRUE),
-                sd = sd(pref_rating, na.rm = TRUE),
-                ci = ci(pref_rating)) %>%
-        mutate(mean, sd, ci)
+        summarise(grandmean = mean(mean_pref, na.rm = TRUE),       # now get grand mean <- this is for a table
+              ci = ci(mean_pref))
 
-d_tidy_pref_overall$item <- factor(c("within", "cross", "target"))
+d_tidy_pref_subj2$item <- as.factor(d_tidy_pref_subj2$item)
+d_tidy_pref_subj2$item <- factor(c("within", "cross", "target"))
 
-kable(d_tidy_pref_overall, digits = 2)
+kable(d_tidy_pref_subj2, digits = 2)
 
-# Graphing means & sd by item
-ggplot(d_tidy_pref_overall, aes(x=item, y=mean, fill=item)) +
+
+# Graphing means by item type
+ggplot(d_tidy_pref_subj2, aes(x=item, y=grandmean, fill=item)) +
   geom_bar(stat="identity") +
         geom_errorbar(
-                data = d_tidy_pref_overall,
-                aes(ymin=mean-ci, ymax=mean+ci),
+                data = d_tidy_pref_subj2,
+                aes(ymin=grandmean-ci, ymax=grandmean+ci),
                 colour = "black",
                 width = 0.4) +
         labs(title="Mean Enjoyment Ratings by Substitute Item",
@@ -287,6 +252,20 @@ z
 #### Binary Logistic Regression - to what extent is choice of substitutes determined by similarity & expected enjoyment?
 
 ```{r}
+# cleaning d_tidy_pref data for merging by set and id
+d_tidy_pref <- d %>%
+        select(id, starts_with("pref")) %>%
+        gather(pref, pref_rating, starts_with("pref")) %>%
+        separate(pref, c("set", "item"), "_") %>%
+        spread(item, pref_rating) %>%
+        rename(within = "1",
+               cross = "2",
+               target = "3")
+
+d_tidy_pref$set <- gsub("pref", "", d_tidy_pref$set)
+d_tidy_pref$set <- as.factor(d_tidy_pref$set)
+
+
 d_tidy <- full_join(d_tidy_sim, d_tidy_choice, (by = NULL), copy = "FALSE")
 d_tidy <- full_join(d_tidy, d_tidy_pref, (by = NULL), copy = "FALSE")
 
