@@ -1,7 +1,7 @@
 ---
 title: "Replication_Huh2016_PilotB"
 author: "Danielle Boles"
-date: "12/6/2017"
+date: "12/8/2017"
 output: html_document
 ---
 
@@ -175,10 +175,17 @@ d_tidy_pref <- d %>%
         spread(item, pref_rating) %>%
         rename(within = "1",
                cross = "2",
-               target = "3")
+               target = "3") %>%
+        group_by(id) %>%
+        summarise(mean_pref_within = mean(within, na.rm = TRUE),
+                  mean_pref_cross = mean(cross, na.rm = TRUE),
+                  mean_pref_target = mean(target, na.rm = TRUE))
 
-d_tidy_pref$set <- gsub("pref", "", d_tidy_pref$set)
-d_tidy_pref$set <- as.factor(d_tidy_pref$set)
+
+# Performing t-test on enjoyment ratings of substitute item type within subjects
+t.test(d_tidy_pref$mean_pref_cross, d_tidy_pref$mean_pref_within, paired=TRUE)
+t.test(d_tidy_pref$mean_pref_target, d_tidy_pref$mean_pref_within, paired=TRUE)
+
 
 # Adding sd and ci to mean enjoyment of substitute item type by stimulus set
 d_tidy_pref_set <- d %>%
@@ -211,11 +218,11 @@ head(d_tidy_pref_set)
 kable(d_tidy_pref_set)
 
 
-# Calculating t-tests by substitute item type overall
-t.test(d_tidy_pref_set$cross_mean, d_tidy_pref_set$within_mean, paired = TRUE)
-t.test(d_tidy_pref_set$target_mean, d_tidy_pref_set$within_mean, paired = TRUE)
-t.test(d_tidy_pref_set$cross_mean, d_tidy_pref_set$target_mean, paired = TRUE)
-
+# Performing t-test on substitute type within subjects
+d %>%
+        group_by(set, id) %>%
+        summarise(mean_pref_within = mean(within)) %>%
+        
 
 # Creating table for overall mean enjoyment and sd of substitute item type
 d_tidy_pref_overall <- d %>%
