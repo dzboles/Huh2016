@@ -20,6 +20,10 @@ library(devtools)
 library(lme4)
 library(ggplot2)
 
+sem <- function(x) {sd(x, na.rm=TRUE) / sqrt(sum(!is.na((x))))}
+ci <- function(x) {sem(x) * 1.96}
+
+
 ```
 
 <center> Replication of "More Similar but Less Satisfying: Comparing Preferences for and the Efficacy of Within- and Cross-Category Substitutes for Food" by Huh, Vosgerau, and Morewedge (2016, *Psychological Science*) </center>
@@ -41,17 +45,16 @@ The original article by Huh, Vosgerau and Morewedge examines choice behavior and
 > [Link to survey](https://stanforduniversity.qualtrics.com/jfe/form/SV_7Pe4dqmYThp3OrH) 
 
 ### Power Analysis
-The key statistical analyses by which the success or failure of this replication will be judged is the significance of the finding that even though participants expected to enjoy within-category (M = 2.86, SD = 0.90) substitutes less than cross-category substitutes (M = 3.48, SD = 0.81), all t(100)s > 7.53, all ps < .001, participants more often chose within-category substitutes than cross-category substitutes (mean choice share for within-category substitutes = 79.7%)...test against 50%: p < .001.
+The key statistical analyses by which the success or failure of this replication will be judged is the significance of the finding that even though participants expected to enjoy within-category (M = 2.86, SD = 0.90) substitutes less than cross-category substitutes (M = 3.48, SD = 0.81), all t(100)s > 7.53, all ps < .001, participants more often chose within-category substitutes than cross-category substitutes (mean choice share for within-category substitutes = 79.7%, p < .001). Substitute choice was tested against the null hypothesis that there is no difference of choice between substitutes (50/50 chance for within and cross-category).
 The original article sampled 101 online participants, which when performing a posthoc power calculation on enjoyment ratings, yielded an effect size of d = .45 with 99% power. In terms of numbers of partcipants, 90% power will require N=44, less than half of the original sample. For the purposes of this replication, it will seek to sample 55 participants, achieving 95% power.
 
 ### Planned Sample
-Online participants will be recruited via Amazon's Mechanical Turk and must be at least 18 years old, have an approval rating of 95%, and live in the United States. Demographic variables of the original study were not reported. Although, sample size calculations show that we would only need 32 participants to meet the threshold of 80% power, this replication will sample 100 participants for two reasons:
-1. To match the high power of the original study.
-2. The estimated time of survey completion is only 3-4 min.
+Online participants will be recruited via Amazon's Mechanical Turk and must be at least 18 years old, have an approval rating of 95%, and live in the United States. Demographic variables of the original study were collected but not reported. 
+Sample size calculations show that we would only need 32 participants to meet the threshold of 80% power, this replication will sample 55 participants to achieve 95% power, which more closely matches the high power of the original study.
 Apart from the age, approval rating, and consent requirements, the authors did not list any exclusionary criteria in creating their final sample.
 
 ### Materials
-This survey was created on Qualtrics and launched on Amazon Mechanical Turk. Participants are required to complete this survey on a laptop or tablet.
+This survey was created on Qualtrics and launched on Amazon Mechanical Turk.
 
 ### Procedure
 > "Each participant saw 10 separate sets of three foods: one desired food and two substiutes. For each set, they first indicated which of two foods would vetter satisfy their craving for the desired food if it were not available: a within-category substitute or a cross-category substitute (e.g., if the desired food was a "Chipotle burrito," they could choose a "store-brand frozen burrito" or "KFC fried chicken" as the within- and cross-category substitute, respectively... Sets and choice options within sets were presented in random order. Stimuli were chosen such that within-category substitutes were more similar than cross category substitutes to the desired foods but were expected to be less enjoyable to consume (i.e., of lower quality). Participants were given the following information before seeing the stimulus sets:
@@ -159,14 +162,13 @@ sim_grandmean
 sim_grandsd
 
 ```
-Each of the 10 similarity ratings was tested against the scale midpoint (4; they are equally similar). Participants judged all within-category substitutes to be more similar than all cross-category substitutes to the desired foods (M = 2.38, SD = 1.34, Range = 2.1 - 2.9), all ps < .05 except for stimulus sets #3 (p <.1) and #5 (p < .1).
-
+Each of the 10 similarity ratings was tested against the scale midpoint (4; they are equally similar).
 
 #### Key Statistical Analysis 1: Expected Enjoyment (Preference) Ratings
 ```{r}
 
-# Calculating mean enjoyment and sd of substitute item type by stimulus set
-d_tidy_pref <- d %>%
+# Calculating mean enjoyment, sd, and CI of substitute item type by stimulus set
+d_tidy_pref_set <- d %>%
         select(id, starts_with("pref")) %>%
         gather(pref, pref_rating, starts_with("pref")) %>%
         separate(pref, c("set", "item"), "_") %>%
@@ -177,24 +179,29 @@ d_tidy_pref <- d %>%
         select(set, within, cross, target) %>%
         group_by(set) %>%
         summarise(
-                mean_within = mean(within, na.rm = TRUE, round(2)),
-                mean_cross = mean(cross, na.rm = TRUE, round(2)),
-                mean_target = mean(target, na.rm = TRUE, round(2))) %>%
-        mutate(mean_within, mean_cross, mean_target)
+                within_mean = mean(within, na.rm = TRUE, round(2)),
+                within_sd = sd(within, na.rm = TRUE),
+                within_ci = ci(within),
+                cross_mean = mean(cross, na.rm = TRUE, round(2)),
+                cross_sd = sd(within, na.rm = TRUE),
+                cross_ci = ci(cross),
+                target_mean = mean(target, na.rm = TRUE, round(2)),
+                target_sd = sd(target, na.rm = TRUE),
+                target_ci = ci(target)) %>%
+        mutate(within_mean, within_sd, within_ci, cross_mean, cross_sd, within_ci, target_mean, target_sd, target_ci)
 
 # cleaning the data
-d_tidy_pref$set <- gsub("pref", "", d_tidy_pref$set)
-d_tidy_pref$set <- as.factor(d_tidy_pref$set)
+d_tidy_pref_set$set <- gsub("pref", "", d_tidy_pref_set$set)
+d_tidy_pref_set$set <- as.factor(d_tidy_pref_set$set)
 
 head(d_tidy_pref)
 kable(d_tidy_pref)
 
-# **NEED HELP calculating 3 t-tests for each set. 1 t test each for within vs. cross, within vs. target, cross vs. target**
 
 # Calculating t-tests by substitute item type overall
-t.test(d_tidy_pref$mean_cross, d_tidy_pref$mean_within)
-t.test(d_tidy_pref$mean_target, d_tidy_pref$mean_within)
-t.test(d_tidy_pref$mean_cross, d_tidy_pref$mean_target)
+t.test(d_tidy_pref$cross_mean, d_tidy_pref$within_mean, paired = TRUE)
+t.test(d_tidy_pref$target_mean, d_tidy_pref$within_mean, paired = TRUE)
+t.test(d_tidy_pref$cross_mean, d_tidy_pref$target_mean, paired = TRUE)
 
 
 # Creating table for overall mean enjoyment and sd of substitute item type
@@ -205,8 +212,9 @@ d_tidy_pref_overall <- d %>%
         group_by(item) %>%
         summarise(
                 mean = mean(pref_rating, na.rm = TRUE),
-                sd = sd(pref_rating, na.rm = TRUE)) %>%
-        mutate(mean, sd)
+                sd = sd(pref_rating, na.rm = TRUE),
+                ci = ci(pref_rating)) %>%
+        mutate(mean, sd, ci)
 
 d_tidy_pref_overall$item <- factor(c("within", "cross", "target"))
 
@@ -217,14 +225,14 @@ ggplot(d_tidy_pref_overall, aes(x=item, y=mean, fill=item)) +
   geom_bar(stat="identity") +
         geom_errorbar(
                 data = d_tidy_pref_overall,
-                aes(item, mean, ymin = mean - sd, ymax = mean + sd),
+                aes(ymin=mean-ci, ymax=mean+ci),
                 colour = "black",
                 width = 0.4) +
         labs(title="Mean Enjoyment Ratings by Substitute Item",
        x="Substitute Item", y = "Mean Enjoyment")
 ```
 
-On this pilot data, participants overall expected to enjoy eating the target item (M = 3.99, SD = 1.18) and the cross category item (M = 3.80, SD = 1.37) more than the within category item (M = 2.20, SD = 0.99), p>.001. There was no significant difference between the enjoyment ratings for the target item and the enjoyment ratings for the cross-category item (p>.05). This replication diverges from the original study by reporting a t-test on all enjoyment ratings of items (target vs. within, target vs. cross, within vs. cross) across all sets of stimuli (Set 1, Set 2,... Set 10) whereas the original authors did t-tests for each stimuli set and reported all t(100s) > 7.53 and all ps <.001.
+This replication diverges from the original study by reporting a t-test on all enjoyment ratings of items (target vs. within, target vs. cross, within vs. cross) across all sets of stimuli (Set 1, Set 2,... Set 10) whereas the original authors did t-tests for each stimuli set and reported all t(100s) > 7.53 and all ps <.001.
         
 
 #### Key Statistical Analysis 2: Item Choice Share
@@ -244,11 +252,29 @@ head(d_tidy_choice)
 
 # calculate proportions chose within-category vs. cross-category & test against 50%
 table(d_tidy_choice$choice)
-binom.test(41, 50, 0.5, alternative="two.sided")
+binom.test(60, 100, 0.5, alternative="two.sided", conf.level = 0.95)
+
+se_p = sqrt((.5*(1-.5))/(100))
+z = (.60-.5)/se_p
+
+z
+
 ```
-Overall, compared to within category substitutes, participants more often chose cross category items to satisfy their craving for the target food. 
-This replication diverges from the original paper by not reporting a z-score. The original authors reported a z score of 5.97. 
 
 
+### Secondary Tests
 
+#### Binary Logistic Regression - to what extent is choice of substitutes determined by similarity & expected enjoyment?
 
+```{r}
+d_tidy <- full_join(d_tidy_sim, d_tidy_choice, (by = NULL), copy = "FALSE")
+d_tidy <- full_join(d_tidy, d_tidy_pref, (by = NULL), copy = "FALSE")
+
+# regression of similarity and enjoyment ratings on item choice with participants as random effects
+choice_model <- glmer(d_tidy$choice ~ d_tidy$sim + d_tidy$within + d_tidy$cross + (1|d_tidy$id),
+             family = binomial)
+
+summary(choice_model)
+
+```
+> "As a more rigorous test of whether similarity determined choices of substitutes, we regressed choices (0=cross-category substitute, 1=within-category substitute) on similarity and enjoyment ratings for the within- and cross-category substitutes in a logit model, with participants as random effects."
